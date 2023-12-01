@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package xray.common.protocol;
+option csharp_namespace = "Xray.Common.Protocol";
+option go_package = "github.com/xtls/xray-core/common/protocol";
+option java_package = "com.xray.common.protocol";
+option java_multiple_files = true;
+
+import "common/serial/typed_message.proto";
+
+// User is a generic user for all procotols.
+message User {
+  // Device limit and speed limit
+  uint64 speed_limit = 1;
+  uint32 device_limit = 2;
+  
+  uint32 level = 3;
+  string email = 4;
+
+  // Protocol specific account information. Must be the account proto in one of
+  // the proxies.
+  xray.common.serial.TypedMessage account = 5;
+
+  // For global device limit
+  uint32 id = 6;
+}
