@@ -231,7 +231,7 @@ func (d *DefaultDispatcher) getLink(ctx context.Context, network net.Network, sn
 
 	if user != nil && len(user.Email) > 0 {
 
-		// Device limit
+		/* Device limit
 		if user.DeviceLimit > 0 {
 			reject := d.limiter.CheckDeviceLimit(user.ID, user.Email, user.DeviceLimit, sessionInbound.Source.Address.IP().String())
 			if reject {
@@ -243,8 +243,9 @@ func (d *DefaultDispatcher) getLink(ctx context.Context, network net.Network, sn
 				return nil, nil
 			}
 		}
+  		*/
 
-		// Speed limit, byte/s
+		// Speed limit in byte/s
 		if user.SpeedLimit > 0 {
 			bucket := rate.NewLimiter(rate.Limit(user.SpeedLimit), int(user.SpeedLimit))
 			inboundLink.Writer = d.limiter.RateWriter(inboundLink.Writer, bucket)
