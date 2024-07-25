@@ -28,7 +28,7 @@ import (
 
 	// Speed limit
 	"golang.org/x/time/rate"
-	"github.com/xtls/xray-core/app/limiter"
+	"github.com/neoforth/xray-core/app/limiter"
 )
 
 var errSniffingTimeout = errors.New("timeout on sniffing")
