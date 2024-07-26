@@ -174,7 +174,7 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 		if user.DeviceLimit > 0 {
 			reject := d.limiter.CheckDeviceLimit(user.ID, user.Email, user.DeviceLimit, sessionInbound.Source.Address.IP().String())
 			if reject {
-				errors.LogWarning("Device number exceeded the limit: ", user.Email).AtWarning().WriteToLog()
+				errors.LogWarning("Number of device reached limit: ", user.Email)
 				common.Close(outboundLink.Writer)
 				common.Close(inboundLink.Writer)
 				common.Interrupt(outboundLink.Reader)
