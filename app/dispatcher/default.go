@@ -176,7 +176,7 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 			common.Close(inboundLink.Writer)
 			common.Interrupt(outboundLink.Reader)
 			common.Interrupt(inboundLink.Reader)
-			return nil, nil
+			return inboundLink, outboundLink
 		}
 		if ok {
 			inboundLink.Writer = d.limiter.RateWriter(inboundLink.Writer, bucket)
