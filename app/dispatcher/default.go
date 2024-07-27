@@ -100,7 +100,7 @@ type DefaultDispatcher struct {
 	dns    dns.Client
 	fdns   dns.FakeDNSEngine
 
-	// Speed limit
+	// Device limit and speed limit
 	limiter *limiter.Limiter
 }
 
@@ -127,7 +127,7 @@ func (d *DefaultDispatcher) Init(config *Config, om outbound.Manager, router rou
 	d.stats = sm
 	d.dns = dns
 
-	// Speed limit
+	// Device limit and speed limit
 	d.limiter = limiter.New()
 
 	return nil
