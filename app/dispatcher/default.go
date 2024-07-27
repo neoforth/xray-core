@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/xtls/xray-core/common"
-	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/buf"
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/log"
 	"github.com/xtls/xray-core/common/net"
 	"github.com/xtls/xray-core/common/protocol"
@@ -26,9 +26,8 @@ import (
 	"github.com/xtls/xray-core/transport"
 	"github.com/xtls/xray-core/transport/pipe"
 
-	// Speed limit
-	"golang.org/x/time/rate"
-	"github.com/neoforth/xray-core/app/limiter"
+	// Device limit and speed limit
+	"github.com/xtls/xray-core/app/limiter"
 )
 
 var errSniffingTimeout = errors.New("timeout on sniffing")
@@ -169,24 +168,17 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 	}
 
 	if user != nil && len(user.Email) > 0 {
-
-		/* Device limit
-		if user.DeviceLimit > 0 {
-			reject := d.limiter.CheckDeviceLimit(user.ID, user.Email, user.DeviceLimit, sessionInbound.Source.Address.IP().String())
-			if reject {
-				errors.LogWarning("Number of device reached limit: ", user.Email)
-				common.Close(outboundLink.Writer)
-				common.Close(inboundLink.Writer)
-				common.Interrupt(outboundLink.Reader)
-				common.Interrupt(inboundLink.Reader)
-				return nil, nil
-			}
+		// Device limit and speed limit
+		bucket, ok, reject := d.limiter.GetUserBucket(sessionInbound.Tag, user.ID, user.Email, user.DeviceLimit, user.SpeedLimit, sessionInbound.Source.Address.IP().String())
+		if reject {
+			errors.LogWarning(ctx, "Device limit reached: ", user.Email)
+			common.Close(outboundLink.Writer)
+			common.Close(inboundLink.Writer)
+			common.Interrupt(outboundLink.Reader)
+			common.Interrupt(inboundLink.Reader)
+			return nil, nil
 		}
-		*/
-
-		// Speed limit
-		if user.SpeedLimit > 0 {
-			bucket := rate.NewLimiter(rate.Limit(user.SpeedLimit), int(user.SpeedLimit))
+		if ok {
 			inboundLink.Writer = d.limiter.RateWriter(inboundLink.Writer, bucket)
 			outboundLink.Writer = d.limiter.RateWriter(outboundLink.Writer, bucket)
 		}
