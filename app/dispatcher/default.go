@@ -27,7 +27,7 @@ import (
 	"github.com/xtls/xray-core/transport/pipe"
 
 	// Device limit and speed limit
-	"github.com/xtls/xray-core/app/limiter"
+	"github.com/neoforth/xray-core/app/limiter"
 )
 
 var errSniffingTimeout = errors.New("timeout on sniffing")
