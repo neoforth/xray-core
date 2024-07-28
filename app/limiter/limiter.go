@@ -33,7 +33,7 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 	})
 	inboundInfo := value.(*InboundInfo)
 
-	// Local device limit
+	/* Local device limit
 	userDevices, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
 	ipMap := userDevices.(*sync.Map)
 	if _, loaded := ipMap.LoadOrStore(ip, uid); !loaded {
@@ -47,6 +47,7 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 			return nil, false, true
 		}
 	}
+	*/
 
 	// Speed limit
 	if speedLimit > 0 {
