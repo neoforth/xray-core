@@ -4,6 +4,7 @@ package limiter
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/xtls/xray-core/common/errors"
 	"golang.org/x/time/rate"
@@ -20,9 +21,32 @@ type Limiter struct {
 }
 
 func New() *Limiter {
-	return &Limiter{
+	limiter := &Limiter{
 		InboundInfo: new(sync.Map),
 	}
+
+	// Start a goroutine to clear UserOnlineIPs and BucketHub every 60 seconds
+	go func() {
+		ticker := time.NewTicker(60 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			limiter.InboundInfo.Range(func(_, value interface{}) bool {
+				inboundInfo := value.(*InboundInfo)
+				inboundInfo.UserOnlineIPs.Range(func(key, _ interface{}) bool {
+					inboundInfo.UserOnlineIPs.Delete(key)
+					return true
+				})
+				inboundInfo.BucketHub.Range(func(key, _ interface{}) bool {
+					inboundInfo.BucketHub.Delete(key)
+					return true
+				})
+				return true
+			})
+		}
+	}()
+
+	return limiter
 }
 
 func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimit uint32, speedLimit uint64, ip string) (*rate.Limiter, bool, bool) {
@@ -33,7 +57,7 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 	})
 	inboundInfo := value.(*InboundInfo)
 
-	/* Local device limit
+	// Local device limit
 	userDevices, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
 	ipMap := userDevices.(*sync.Map)
 	if _, loaded := ipMap.LoadOrStore(ip, uid); !loaded {
@@ -47,7 +71,6 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 			return nil, false, true
 		}
 	}
-	*/
 
 	// Speed limit
 	if speedLimit > 0 {
