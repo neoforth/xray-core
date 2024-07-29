@@ -33,10 +33,12 @@ func New() *Limiter {
 		for range ticker.C {
 			limiter.InboundInfo.Range(func(_, value interface{}) bool {
 				inboundInfo := value.(*InboundInfo)
+				/*
 				inboundInfo.UserOnlineIPs.Range(func(key, _ interface{}) bool {
 					inboundInfo.UserOnlineIPs.Delete(key)
 					return true
 				})
+    				*/
 				inboundInfo.BucketHub.Range(func(key, _ interface{}) bool {
 					inboundInfo.BucketHub.Delete(key)
 					return true
@@ -57,7 +59,7 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 	})
 	inboundInfo := value.(*InboundInfo)
 
-	// Local device limit
+	/* Local device limit
 	userDevices, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
 	ipMap := userDevices.(*sync.Map)
 	if _, loaded := ipMap.LoadOrStore(ip, uid); !loaded {
@@ -71,6 +73,7 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 			return nil, false, true
 		}
 	}
+ 	*/
 
 	// Speed limit
 	if speedLimit > 0 {
