@@ -4,6 +4,7 @@ package limiter
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/xtls/xray-core/common/errors"
 	"golang.org/x/time/rate"
@@ -32,6 +33,30 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 		BucketHub:     new(sync.Map),
 	})
 	inboundInfo := value.(*InboundInfo)
+
+	// Local device limit
+	userDevices, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
+	ipMap := userDevices.(*sync.Map)
+	timestamp := time.Now().Unix()
+	// Clean up expired IPs
+	ipMap.Range(func(key, value interface{}) bool {
+		if timestamp-value.(int64) > 60 {
+			ipMap.Delete(key)
+		}
+		return true
+	})
+	// Check and store current IP
+	if _, loaded := ipMap.LoadOrStore(ip, timestamp); !loaded {
+		var deviceCount uint32
+		ipMap.Range(func(_, _ interface{}) bool {
+			deviceCount++
+			return true
+		})
+		if deviceCount > deviceLimit && deviceLimit > 0 {
+			ipMap.Delete(ip)
+			return nil, false, true
+		}
+	}
 
 	// Speed limit
 	if speedLimit > 0 {
