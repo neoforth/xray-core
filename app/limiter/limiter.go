@@ -4,6 +4,7 @@ package limiter
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/xtls/xray-core/common/errors"
@@ -39,26 +40,31 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 	ipMap := userDevices.(*sync.Map)
 	timestamp := time.Now().Unix()
 
-	// Clean up expired IPs
+	// Clean up expired IPs and count devices
+	var deviceCount uint32
+	var ipsToDelete []string
+
 	ipMap.Range(func(key, value interface{}) bool {
 		if timestamp-value.(int64) > 60 {
-			ipMap.Delete(key)
+			ipsToDelete = append(ipsToDelete, key.(string))
+		} else {
+			atomic.AddUint32(&deviceCount, 1)
 		}
 		return true
 	})
 
-	// Check and store current IP
-	if _, loaded := ipMap.LoadOrStore(ip, timestamp); !loaded {
-		var deviceCount uint32
-		ipMap.Range(func(_, _ interface{}) bool {
-			deviceCount++
-			return true
-		})
-		if deviceCount > deviceLimit && deviceLimit > 0 {
-			ipMap.Delete(ip)
-			return nil, false, true
-		}
+	// Delete expired IPs outside the Range loop to avoid modifying the map while iterating
+	for _, ip := range ipsToDelete {
+		ipMap.Delete(ip)
 	}
+
+	if deviceLimit > 0 && deviceCount >= deviceLimit {
+		return nil, false, true
+	}
+
+	// Add current IP
+	ipMap.Store(ip, timestamp)
+	atomic.AddUint32(&deviceCount, 1) // Increment count for the new IP
 
 	// Speed limit
 	if speedLimit > 0 {
@@ -74,4 +80,3 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 	errors.LogDebug(context.Background(), "Failed to get or create limiter")
 	return nil, false, false
 }
-
