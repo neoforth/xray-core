@@ -1,12 +1,9 @@
-// Package limiter is to control the links that go into the dispatcher
 package limiter
 
 import (
-	"context"
 	"sync"
 	"time"
 
-	"github.com/xtls/xray-core/common/errors"
 	"golang.org/x/time/rate"
 )
 
@@ -18,12 +15,16 @@ type InboundInfo struct {
 
 type Limiter struct {
 	InboundInfo *sync.Map // Key: Tag, Value: *InboundInfo
+	stopChan    chan struct{}
 }
 
 func New() *Limiter {
-	return &Limiter{
+	l := &Limiter{
 		InboundInfo: new(sync.Map),
+		stopChan:    make(chan struct{}),
 	}
+	go l.startCleanupTask()
+	return l
 }
 
 func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimit uint32, speedLimit uint64, ip string) (*rate.Limiter, bool, bool) {
@@ -37,16 +38,7 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 	// Local device limit
 	userDevices, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
 	ipMap := userDevices.(*sync.Map)
-	timestamp := time.Now().Unix()
-	// Clean up expired IPs
-	ipMap.Range(func(key, value interface{}) bool {
-		if timestamp-value.(int64) > 60 {
-			ipMap.Delete(key)
-		}
-		return true
-	})
-	// Check and store current IP
-	if _, loaded := ipMap.LoadOrStore(ip, timestamp); !loaded {
+	if _, loaded := ipMap.LoadOrStore(ip, uid); !loaded {
 		var deviceCount uint32
 		ipMap.Range(func(_, _ interface{}) bool {
 			deviceCount++
@@ -69,6 +61,46 @@ func (l *Limiter) GetUserBucket(tag string, uid uint32, email string, deviceLimi
 		return limiter, true, false
 	}
 
-	errors.LogDebug(context.Background(), "Failed to get or create limiter")
 	return nil, false, false
+}
+
+func (l *Limiter) startCleanupTask() {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			l.cleanUserOnlineIPs()
+			l.cleanBucketHub()
+		case <-l.stopChan:
+			return
+		}
+	}
+}
+
+func (l *Limiter) cleanUserOnlineIPs() {
+	l.InboundInfo.Range(func(_, value interface{}) bool {
+		inboundInfo := value.(*InboundInfo)
+		inboundInfo.UserOnlineIPs.Range(func(key, _ interface{}) bool {
+			inboundInfo.UserOnlineIPs.Delete(key)
+			return true
+		})
+		return true
+	})
+}
+
+func (l *Limiter) cleanBucketHub() {
+	l.InboundInfo.Range(func(_, value interface{}) bool {
+		inboundInfo := value.(*InboundInfo)
+		inboundInfo.BucketHub.Range(func(key, _ interface{}) bool {
+			inboundInfo.BucketHub.Delete(key)
+			return true
+		})
+		return true
+	})
+}
+
+func (l *Limiter) Stop() {
+	close(l.stopChan)
 }
