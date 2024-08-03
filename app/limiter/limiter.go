@@ -60,17 +60,18 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 	ipMappingsValue, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
 	ipMappings := ipMappingsValue.(*sync.Map)
 
-	ipTimestampsValue, ipExists := ipMappings.LoadOrStore(ip, new(sync.Map))
+	ipTimestampsValue, exists := ipMappings.LoadOrStore(ip, new(sync.Map))
 	ipTimestamps := ipTimestampsValue.(*sync.Map)
 
 	timestamp := time.Now().Unix()
 	ipTimestamps.Store(1, timestamp)
 
-	if !ipExists {
+	if !exists {
 		ipTimestamps.Store(0, timestamp)
 
 		if ipLimit > 0 {
 			var ipCount uint32
+
 			ipMappings.Range(func(_, _ interface{}) bool {
 				ipCount++
 				return true
@@ -142,6 +143,7 @@ func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration) {
 				if ipLastSeen < expirationTime {
 					ipsToDelete = append(ipsToDelete, ip)
 				}
+
 				return true
 			})
 
