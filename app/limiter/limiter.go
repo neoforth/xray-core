@@ -57,10 +57,10 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 	})
 	userInfo := userInfoValue.(*UserInfo)
 
-	userOnlineIPsValue, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
-	userOnlineIPs := userOnlineIPsValue.(*sync.Map)
+	ipMappingsValue, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
+	ipMappings := ipMappingsValue.(*sync.Map)
 
-	ipTimestampsValue, ipExists := userOnlineIPs.LoadOrStore(ip, new(sync.Map))
+	ipTimestampsValue, ipExists := ipMappings.LoadOrStore(ip, new(sync.Map))
 	ipTimestamps := ipTimestampsValue.(*sync.Map)
 
 	timestamp := time.Now().Unix()
@@ -71,13 +71,14 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 
 		if ipLimit > 0 {
 			var ipCount uint32
-			userOnlineIPs.Range(func(_, _ interface{}) bool {
+			ipMappings.Range(func(_, _ interface{}) bool {
 				ipCount++
 				return true
 			})
 
 			if ipCount > ipLimit {
-				userOnlineIPs.Delete(ip)
+				ipMappings.Delete(ip)
+
 				return nil, false, true
 			}
 		}
@@ -90,8 +91,10 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 			}
 			userInfo.RateLimit = rateLimit
 		}
+
 		bucket := rate.NewLimiter(rate.Limit(rateLimit), int(rateLimit))
 		inboundInfo.BucketHub.Store(email, bucket)
+
 		return bucket, true, false
 	}
 
@@ -121,33 +124,49 @@ func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration) {
 	limiter.InboundInfo.Range(func(_, value interface{}) bool {
 		inboundInfo := value.(*InboundInfo)
 
+		var emailsToDelete []string
+
 		inboundInfo.UserOnlineIPs.Range(func(key, value interface{}) bool {
 			email := key.(string)
-			userOnlineIPs := value.(*sync.Map)
+			ipMappings := value.(*sync.Map)
 
-			userOnlineIPs.Range(func(key, value interface{}) bool {
+			var ipsToDelete []string
+
+			ipMappings.Range(func(key, value interface{}) bool {
 				ip := key.(string)
 				ipTimestamps := value.(*sync.Map)
 
-				ipTimestamp, _ := ipTimestamps.Load(1)
-				ipLastSeen := ipTimestamp.(int64)
+				ipLastSeenValue, _ := ipTimestamps.Load(1)
+				ipLastSeen := ipLastSeenValue.(int64)
+
 				if ipLastSeen < expirationTime {
-					userOnlineIPs.Delete(ip)
+					ipsToDelete = append(ipsToDelete, ip)
 				}
 				return true
 			})
 
+			for _, ip := range ipsToDelete {
+				ipMappings.Delete(ip)
+			}
+
 			var ipCount uint32
-			userOnlineIPs.Range(func(_, _ interface{}) bool {
+
+			ipMappings.Range(func(_, _ interface{}) bool {
 				ipCount++
 				return true
 			})
 
 			if ipCount == 0 {
-				inboundInfo.UserOnlineIPs.Delete(email)
+				emailsToDelete = append(emailsToDelete, email)
 			}
+
 			return true
 		})
+
+		for _, email := range emailsToDelete {
+			inboundInfo.UserOnlineIPs.Delete(email)
+		}
+
 		return true
 	})
 }
@@ -156,21 +175,30 @@ func (limiter *Limiter) cleanBucketHub() {
 	limiter.InboundInfo.Range(func(_, value interface{}) bool {
 		inboundInfo := value.(*InboundInfo)
 
+		var emailsToDelete []string
+
 		inboundInfo.UserOnlineIPs.Range(func(key, value interface{}) bool {
 			email := key.(string)
-			userOnlineIPs := value.(*sync.Map)
+			ipMappings := value.(*sync.Map)
 
 			var ipCount uint32
-			userOnlineIPs.Range(func(_, _ interface{}) bool {
+
+			ipMappings.Range(func(_, _ interface{}) bool {
 				ipCount++
 				return true
 			})
 
 			if ipCount == 0 {
-				inboundInfo.BucketHub.Delete(email)
+				emailsToDelete = append(emailsToDelete, email)
 			}
+
 			return true
 		})
+
+		for _, email := range emailsToDelete {
+			inboundInfo.BucketHub.Delete(email)
+		}
+
 		return true
 	})
 }
