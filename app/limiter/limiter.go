@@ -111,7 +111,7 @@ func (limiter *Limiter) startCleanupTask(interval time.Duration) {
 	for {
 		select {
 		case <-ticker.C:
-			limiter.cleanUserOnlineIPs(30 * time.Minute)
+			limiter.cleanUserOnlineIPs(5 * time.Minute)
 			limiter.cleanBucketHub()
 		case <-limiter.stopChan:
 			return
@@ -120,7 +120,7 @@ func (limiter *Limiter) startCleanupTask(interval time.Duration) {
 }
 
 func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration) {
-	expirationTime := time.Now().Add(-timeout).Unix()
+	ipExpirationTime := time.Now().Add(-timeout).Unix()
 
 	limiter.InboundInfo.Range(func(_, value interface{}) bool {
 		inboundInfo := value.(*InboundInfo)
@@ -140,7 +140,7 @@ func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration) {
 				ipLastSeenValue, _ := ipTimestamps.Load(1)
 				ipLastSeen := ipLastSeenValue.(int64)
 
-				if ipLastSeen < expirationTime {
+				if ipLastSeen < ipExpirationTime {
 					ipsToDelete = append(ipsToDelete, ip)
 				}
 
