@@ -137,10 +137,13 @@ func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration) {
 				ip := key.(string)
 				ipTimestamps := value.(*sync.Map)
 
+				ipFirstSeenValue, _ := ipTimestamps.Load(0)
+				ipFirstSeen := ipFirstSeenValue.(int64)
+
 				ipLastSeenValue, _ := ipTimestamps.Load(1)
 				ipLastSeen := ipLastSeenValue.(int64)
 
-				if ipLastSeen < ipExpirationTime {
+				if ipFirstSeen < ipExpirationTime && ipLastSeen < ipExpirationTime {
 					ipsToDelete = append(ipsToDelete, ip)
 				}
 
