@@ -1,6 +1,7 @@
 package limiter
 
 import (
+	"math"
 	"sync"
 	"time"
 
@@ -25,6 +26,13 @@ type UserInfo struct {
 	Email     string
 	IPLimit   uint32
 	RateLimit uint64
+}
+
+type IPStatus struct {
+	AccessCount   uint64
+	FirstSeen     int64
+	LastSeen      int64
+	ActivityScore float64
 }
 
 func New() *Limiter {
@@ -60,14 +68,21 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 	ipMappingsValue, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
 	ipMappings := ipMappingsValue.(*sync.Map)
 
-	ipTimestampsValue, exists := ipMappings.LoadOrStore(ip, new(sync.Map))
-	ipTimestamps := ipTimestampsValue.(*sync.Map)
+	ipStatusValue, exists := ipMappings.LoadOrStore(ip, &IPStatus{
+		FirstSeen:     0,
+		LastSeen:      0,
+		ActivityScore: 0,
+		AccessCount:   0,
+	})
+	ipStatus := ipStatusValue.(*IPStatus)
+
+	ipStatus.AccessCount++
 
 	timestamp := time.Now().Unix()
-	ipTimestamps.Store(1, timestamp)
+	ipStatus.LastSeen = timestamp
 
 	if !exists {
-		ipTimestamps.Store(0, timestamp)
+		ipStatus.FirstSeen = timestamp
 
 		if ipLimit > 0 {
 			var ipCount uint32
@@ -111,7 +126,7 @@ func (limiter *Limiter) startCleanupTask(interval time.Duration) {
 	for {
 		select {
 		case <-ticker.C:
-			limiter.cleanUserOnlineIPs(5 * time.Minute)
+			limiter.cleanUserOnlineIPs(5*time.Minute, 0.01)
 			limiter.cleanBucketHub()
 		case <-limiter.stopChan:
 			return
@@ -119,8 +134,9 @@ func (limiter *Limiter) startCleanupTask(interval time.Duration) {
 	}
 }
 
-func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration) {
-	ipExpirationTime := time.Now().Add(-timeout).Unix()
+func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration, threshold float64) {
+	now := time.Now().Unix()
+	windowSize := int64(timeout.Seconds())
 
 	limiter.InboundInfo.Range(func(_, value interface{}) bool {
 		inboundInfo := value.(*InboundInfo)
@@ -135,15 +151,16 @@ func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration) {
 
 			ipMappings.Range(func(key, value interface{}) bool {
 				ip := key.(string)
-				ipTimestamps := value.(*sync.Map)
+				ipStatus := value.(*IPStatus)
 
-				ipFirstSeenValue, _ := ipTimestamps.Load(0)
-				ipFirstSeen := ipFirstSeenValue.(int64)
+				timeSinceFirstSeen := now - ipStatus.FirstSeen
+				timeSinceLastSeen := now - ipStatus.LastSeen
 
-				ipLastSeenValue, _ := ipTimestamps.Load(1)
-				ipLastSeen := ipLastSeenValue.(int64)
+				activityScore := float64(ipStatus.AccessCount) / float64(timeSinceFirstSeen)
+				decayFactor := math.Exp(-float64(timeSinceLastSeen) / float64(windowSize))
+				ipStatus.ActivityScore = activityScore * decayFactor
 
-				if ipFirstSeen < ipExpirationTime && ipLastSeen < ipExpirationTime {
+				if timeSinceLastSeen > windowSize && ipStatus.ActivityScore < threshold {
 					ipsToDelete = append(ipsToDelete, ip)
 				}
 
