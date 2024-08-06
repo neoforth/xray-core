@@ -68,7 +68,7 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 	ipMappingsValue, _ := inboundInfo.UserOnlineIPs.LoadOrStore(email, new(sync.Map))
 	ipMappings := ipMappingsValue.(*sync.Map)
 
-	ipStatusValue, exists := ipMappings.LoadOrStore(ip, &IPStatus{
+	ipStatusValue, ipExists := ipMappings.LoadOrStore(ip, &IPStatus{
 		FirstSeen:     0,
 		LastSeen:      0,
 		ActivityScore: 0,
@@ -81,7 +81,7 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 	timestamp := time.Now().Unix()
 	ipStatus.LastSeen = timestamp
 
-	if !exists {
+	if !ipExists {
 		ipStatus.FirstSeen = timestamp
 
 		if ipLimit > 0 {
@@ -92,6 +92,10 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 				return true
 			})
 
+			if userInfo.IPLimit != ipLimit {
+				userInfo.IPLimit = ipLimit
+			}
+
 			if ipCount > ipLimit {
 				ipMappings.Delete(ip)
 
@@ -101,7 +105,7 @@ func (limiter *Limiter) GetUserBucket(tag string, uid uint32, email string, ipLi
 	}
 
 	if rateLimit > 0 {
-		if rateLimiter, exists := inboundInfo.BucketHub.Load(email); exists {
+		if rateLimiter, emailExists := inboundInfo.BucketHub.Load(email); emailExists {
 			if userInfo.RateLimit == rateLimit {
 				return rateLimiter.(*rate.Limiter), true, false
 			}
@@ -155,12 +159,14 @@ func (limiter *Limiter) cleanUserOnlineIPs(timeout time.Duration, threshold floa
 
 				timeSinceFirstSeen := now - ipStatus.FirstSeen
 				timeSinceLastSeen := now - ipStatus.LastSeen
-
 				activityScore := float64(ipStatus.AccessCount) / float64(timeSinceFirstSeen)
 				decayFactor := math.Exp(-float64(timeSinceLastSeen) / float64(windowSize))
-				ipStatus.ActivityScore = activityScore * decayFactor
 
-				if timeSinceLastSeen > windowSize && ipStatus.ActivityScore < threshold {
+				ipActivityScore := activityScore * decayFactor
+
+				ipStatus.ActivityScore = ipActivityScore
+
+				if timeSinceLastSeen > windowSize && ipActivityScore < threshold {
 					ipsToDelete = append(ipsToDelete, ip)
 				}
 
