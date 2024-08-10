@@ -26,23 +26,22 @@ func (u *User) ToMemoryUser() (*MemoryUser, error) {
 		return nil, err
 	}
 	return &MemoryUser{
-		// For global device limit
+		// Reserved for global device limit
 		ID: u.ID,
 
 		Account: account,
 		Email:   u.Email,
 		Level:   u.Level,
 
-		// Device limit
+		// Device limit and speed limit
 		DeviceLimit: u.DeviceLimit,
-		// Speed limit
 		SpeedLimit:  u.SpeedLimit,
 	}, nil
 }
 
 // MemoryUser is a parsed form of User, to reduce number of parsing of Account proto.
 type MemoryUser struct {
-	// For global device limit
+	// Reserved for global device limit
 	ID uint32
 
 	// Account is the parsed account of the protocol.
@@ -50,8 +49,7 @@ type MemoryUser struct {
 	Email   string
 	Level   uint32
 
-	// Device limit
+	// Device limit and speed limit
 	DeviceLimit uint32
-	// Speed limit
 	SpeedLimit  uint64
 }
