@@ -21,6 +21,6 @@ message User {
   // the proxies.
   xray.common.serial.TypedMessage account = 5;
 
-  // For global device limit
+  // Reserved for global device limit
   uint32 id = 6;
 }
