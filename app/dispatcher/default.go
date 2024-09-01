@@ -163,9 +163,9 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 	if user != nil && len(user.Email) > 0 {
 		// IP limit and rate limit
 		if user.SpeedLimit > 0 {
-			bucket := limiter.RateLimiter.GetBucket(sessionInbound.Tag, user.Email, user.SpeedLimit)
-			inboundLink.Writer = limiter.RateLimiter.RateWriter(inboundLink.Writer, bucket)
-			outboundLink.Writer = limiter.RateLimiter.RateWriter(outboundLink.Writer, bucket)
+			bucket := limiter.Manager.GetUserBucket(sessionInbound.Tag, user.Email, user.SpeedLimit)
+			inboundLink.Writer = limiter.Manager.RateWriter(inboundLink.Writer, bucket)
+			outboundLink.Writer = limiter.Manager.RateWriter(outboundLink.Writer, bucket)
 		}
 
 		p := d.policy.ForLevel(user.Level)
