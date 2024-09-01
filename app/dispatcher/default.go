@@ -26,9 +26,8 @@ import (
 	"github.com/xtls/xray-core/transport"
 	"github.com/xtls/xray-core/transport/pipe"
 
-	// ↓ IP limit and rate limit
+	// IP limit and rate limit
 	"github.com/neoforth/xray-core/app/limiter"
-	// ↑
 )
 
 var errSniffingTimeout = errors.New("timeout on sniffing")
@@ -100,10 +99,6 @@ type DefaultDispatcher struct {
 	stats  stats.Manager
 	dns    dns.Client
 	fdns   dns.FakeDNSEngine
-
-	// ↓ IP limit and rate limit
-	limiter *limiter.Limiter
-	// ↑
 }
 
 func init() {
@@ -128,11 +123,6 @@ func (d *DefaultDispatcher) Init(config *Config, om outbound.Manager, router rou
 	d.policy = pm
 	d.stats = sm
 	d.dns = dns
-
-	// ↓ IP limit and rate limit
-	d.limiter = limiter.New()
-	// ↑
-
 	return nil
 }
 
@@ -171,31 +161,14 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 	}
 
 	if user != nil && len(user.Email) > 0 {
+		// IP limit and rate limit
+		if user.SpeedLimit > 0 {
+			bucket := limiter.RateLimiter.GetBucket(sessionInbound.Tag, user.Email, user.SpeedLimit)
+			inboundLink.Writer = limiter.RateLimiter.RateWriter(inboundLink.Writer, bucket)
+			outboundLink.Writer = limiter.RateLimiter.RateWriter(outboundLink.Writer, bucket)
+		}
+
 		p := d.policy.ForLevel(user.Level)
-		/*
-		if p.Stats.UserOnline {
-			name := "user>>>" + user.Email + ">>>online"
-			if o, _ := stats.GetOrRegisterOnlineMap(d.stats, name); o != nil {
-				ipCount := o.Count() // int
-				ipList := o.List() // []string
-			}
-		}
-		*/
-		// ↓ IP limit and rate limit
-		bucket, ok, reject := d.limiter.Get(sessionInbound.Tag, user.Email, user.DeviceLimit, user.SpeedLimit, sessionInbound.Source.Address.IP().String())
-		if reject {
-			errors.LogWarning(ctx, "IP limit exceeded: ", user.Email)
-			common.Close(outboundLink.Writer)
-			common.Close(inboundLink.Writer)
-			common.Interrupt(outboundLink.Reader)
-			common.Interrupt(inboundLink.Reader)
-			return inboundLink, outboundLink
-		}
-		if ok {
-			inboundLink.Writer = d.limiter.RateWriter(inboundLink.Writer, bucket)
-			outboundLink.Writer = d.limiter.RateWriter(outboundLink.Writer, bucket)
-		}
-		// ↑
 		if p.Stats.UserUplink {
 			name := "user>>>" + user.Email + ">>>traffic>>>uplink"
 			if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
