@@ -39,17 +39,12 @@ func (l *Limiter) GetUserBucket(tag string, email string, rateLimit uint64) *rat
 	inbound := inboundValue.(*Inbound)
 
 	userValue, _ := inbound.Users.LoadOrStore(email, &User{
-		Email: email,
+		Email:  email,
+		Bucket: rate.NewLimiter(rate.Limit(rateLimit), int(rateLimit)),
 	})
 	user := userValue.(*User)
 
-	bucket := user.Bucket
-	if bucket != nil {
-		return bucket
-	}
-	bucket = rate.NewLimiter(rate.Limit(rateLimit), int(rateLimit))
-	user.Bucket = bucket
-	return bucket
+	return user.Bucket
 }
 
 func (l *Limiter) RemoveInbound(tag string) {
@@ -57,7 +52,8 @@ func (l *Limiter) RemoveInbound(tag string) {
 }
 
 func (l *Limiter) RemoveUser(tag string, email string) {
-	inboundValue, _ := l.Inbounds.Load(tag)
-	inbound := inboundValue.(*Inbound)
-	inbound.Users.Delete(email)
+	if inboundValue, found := l.Inbounds.Load(tag); found {
+		inbound := inboundValue.(*Inbound)
+		inbound.Users.Delete(email)
+	}
 }
