@@ -99,6 +99,9 @@ type DefaultDispatcher struct {
 	stats  stats.Manager
 	dns    dns.Client
 	fdns   dns.FakeDNSEngine
+
+	// IP limit and rate limit
+	limiter *limiter.Limiter
 }
 
 func init() {
@@ -123,6 +126,10 @@ func (d *DefaultDispatcher) Init(config *Config, om outbound.Manager, router rou
 	d.policy = pm
 	d.stats = sm
 	d.dns = dns
+
+	// IP limit and rate limit
+	d.limiter = limiter.Get()
+
 	return nil
 }
 
@@ -163,9 +170,9 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 	if user != nil && len(user.Email) > 0 {
 		// IP limit and rate limit
 		if user.SpeedLimit > 0 {
-			bucket := limiter.Manager.GetUserBucket(sessionInbound.Tag, user.Email, user.SpeedLimit)
-			inboundLink.Writer = limiter.Manager.RateWriter(inboundLink.Writer, bucket)
-			outboundLink.Writer = limiter.Manager.RateWriter(outboundLink.Writer, bucket)
+			bucket := d.limiter.GetUserBucket(sessionInbound.Tag, user.Email, user.SpeedLimit)
+			inboundLink.Writer = d.limiter.RateWriter(inboundLink.Writer, bucket)
+			outboundLink.Writer = d.limiter.RateWriter(outboundLink.Writer, bucket)
 		}
 
 		p := d.policy.ForLevel(user.Level)

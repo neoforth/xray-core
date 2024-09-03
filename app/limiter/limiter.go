@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-var Manager *Limiter
+var limiter *Limiter
 
 type Limiter struct {
 	Inbounds *sync.Map // Key: Tag, Value: *Inbound
@@ -22,19 +22,23 @@ type User struct {
 }
 
 func init() {
-	Manager = New()
+	limiter = new()
 }
 
-func New() *Limiter {
+func new() *Limiter {
 	return &Limiter{
-		Inbounds: new(sync.Map),
+		Inbounds: &sync.Map{},
 	}
+}
+
+func Get() *Limiter {
+	return limiter
 }
 
 func (l *Limiter) GetUserBucket(tag string, email string, rateLimit uint64) *rate.Limiter {
 	inboundValue, _ := l.Inbounds.LoadOrStore(tag, &Inbound{
 		Tag:   tag,
-		Users: new(sync.Map),
+		Users: &sync.Map{},
 	})
 	inbound := inboundValue.(*Inbound)
 

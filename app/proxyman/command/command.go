@@ -64,7 +64,8 @@ func (op *RemoveUserOperation) ApplyInbound(ctx context.Context, handler inbound
 	}
 
 	// IP limit and rate limit
-	limiter.Manager.RemoveUser(handler.Tag(), op.Email)
+	l := limiter.Get()
+	l.RemoveUser(handler.Tag(), op.Email)
 
 	return um.RemoveUser(ctx, op.Email)
 }
@@ -85,7 +86,8 @@ func (s *handlerServer) AddInbound(ctx context.Context, request *AddInboundReque
 
 func (s *handlerServer) RemoveInbound(ctx context.Context, request *RemoveInboundRequest) (*RemoveInboundResponse, error) {
 	// IP limit and rate limit
-	limiter.Manager.RemoveInbound(request.Tag)
+	l := limiter.Get()
+	l.RemoveInbound(request.Tag)
 
 	return &RemoveInboundResponse{}, s.ihm.RemoveHandler(ctx, request.Tag)
 }
