@@ -22,11 +22,7 @@ type User struct {
 }
 
 func init() {
-	limiter = new()
-}
-
-func new() *Limiter {
-	return &Limiter{
+	limiter = &Limiter{
 		Inbounds: &sync.Map{},
 	}
 }
