@@ -13,12 +13,18 @@ type Writer struct {
 	writer  buf.Writer
 	limiter *rate.Limiter
 	w       io.Writer
+	ctx     context.Context
 }
 
-func (l *Limiter) RateWriter(writer buf.Writer, limiter *rate.Limiter) buf.Writer {
+func RateWriter(ctx context.Context, writer buf.Writer, limiter *rate.Limiter) buf.Writer {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	return &Writer{
 		writer:  writer,
 		limiter: limiter,
+		w:       writer,
+		ctx:     ctx,
 	}
 }
 
@@ -27,7 +33,8 @@ func (w *Writer) Close() error {
 }
 
 func (w *Writer) WriteMultiBuffer(mb buf.MultiBuffer) error {
-	ctx := context.Background()
-	w.limiter.WaitN(ctx, int(mb.Len()))
+	if err := w.limiter.WaitN(w.ctx, int(mb.Len())); err != nil {
+		return newError("failed to wait for rate limiter").Base(err)
+	}
 	return w.writer.WriteMultiBuffer(mb)
 }
