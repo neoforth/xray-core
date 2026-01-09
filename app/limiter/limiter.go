@@ -47,6 +47,17 @@ func (l *Limiter) GetUserBucket(tag string, email string, rateLimit uint64) *rat
 	return u.Bucket
 }
 
+func (l *Limiter) UpdateUser(tag string, email string, ratelimit uint64) {
+    if inbound, ok := l.Inbounds.Load(tag); ok {
+        inboundValue := inbound.(*Inbound)
+
+        inboundValue.Users.Store(email, &User{
+            Email:  email,
+            Bucket: rate.NewLimiter(rate.Limit(ratelimit), int(ratelimit)),
+        })
+    }
+}
+
 func (l *Limiter) RemoveInbound(tag string) {
 	l.Inbounds.Delete(tag)
 }
