@@ -40,7 +40,7 @@ func (l *Limiter) GetUserBucket(tag string, email string, rateLimit uint64) *rat
 
 	ui, _ := i.Users.LoadOrStore(email, &User{
 		Email:  email,
-		Bucket: rate.NewLimiter(rate.Limit(rateLimit), int(rateLimit)),
+		Bucket: rate.NewLimiter(rate.Limit(rateLimit), int(rateLimit * 3)),
 	})
 	u := ui.(*User)
 
