@@ -40,5 +40,5 @@ func (w *Writer) WriteMultiBuffer(mb buf.MultiBuffer) error {
 }
 
 func newError(values ...interface{}) *errors.Error {
-	return errors.New(values...).Path("App", "Limiter")
+	return errors.New(values...).At("app", "limiter")
 }
