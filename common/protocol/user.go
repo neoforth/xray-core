@@ -1,10 +1,13 @@
 package protocol
 
-import "github.com/xtls/xray-core/common/errors"
+import (
+	"github.com/xtls/xray-core/common/errors"
+	"github.com/xtls/xray-core/common/serial"
+)
 
 func (u *User) GetTypedAccount() (Account, error) {
 	if u.GetAccount() == nil {
-		return nil, errors.New("Account missing").AtWarning()
+		return nil, errors.New("Account is missing").AtWarning()
 	}
 
 	rawAccount, err := u.Account.GetInstance()
@@ -37,6 +40,24 @@ func (u *User) ToMemoryUser() (*MemoryUser, error) {
 		DeviceLimit: u.DeviceLimit,
 		SpeedLimit:  u.SpeedLimit,
 	}, nil
+}
+
+func ToProtoUser(mu *MemoryUser) *User {
+	if mu == nil {
+		return nil
+	}
+	return &User{
+		// Reserved for global device limit
+		ID: mu.ID,
+
+		Account: serial.ToTypedMessage(mu.Account.ToProto()),
+		Email:   mu.Email,
+		Level:   mu.Level,
+
+		// Device limit and speed limit
+		DeviceLimit: mu.DeviceLimit,
+		SpeedLimit:  mu.SpeedLimit,
+	}
 }
 
 // MemoryUser is a parsed form of User, to reduce number of parsing of Account proto.
