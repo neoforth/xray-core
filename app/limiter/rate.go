@@ -6,6 +6,7 @@ import (
 
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
+	"github.com/xtls/xray-core/common/errors"
 	"golang.org/x/time/rate"
 )
 
@@ -36,4 +37,8 @@ func (w *Writer) WriteMultiBuffer(mb buf.MultiBuffer) error {
 		return newError("failed to wait for rate limiter").Base(err)
 	}
 	return w.writer.WriteMultiBuffer(mb)
+}
+
+func newError(values ...interface{}) *errors.Error {
+	return errors.New(values...).Path("App", "Limiter")
 }
