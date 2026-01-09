@@ -16,14 +16,13 @@ type Writer struct {
 	ctx     context.Context
 }
 
-func RateWriter(ctx context.Context, writer buf.Writer, limiter *rate.Limiter) buf.Writer {
+func (l *Limiter) RateWriter(writer buf.Writer, limiter *rate.Limiter) buf.Writer {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	return &Writer{
 		writer:  writer,
 		limiter: limiter,
-		w:       writer,
 		ctx:     ctx,
 	}
 }
