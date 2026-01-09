@@ -16,7 +16,7 @@ type Writer struct {
 	ctx     context.Context
 }
 
-func (l *Limiter) RateWriter(writer buf.Writer, limiter *rate.Limiter) buf.Writer {
+func (l *Limiter) RateWriter(ctx context.Context, writer buf.Writer, limiter *rate.Limiter) buf.Writer {
 	if ctx == nil {
 		ctx = context.Background()
 	}
