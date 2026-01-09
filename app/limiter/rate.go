@@ -28,10 +28,6 @@ func (l *Limiter) RateWriter(ctx context.Context, writer buf.Writer, limiter *ra
 	}
 }
 
-func (w *Writer) Close() error {
-	return common.Close(w.writer)
-}
-
 func (w *Writer) WriteMultiBuffer(mb buf.MultiBuffer) error {
 	if err := w.limiter.WaitN(w.ctx, int(mb.Len())); err != nil {
 		return newError("failed to wait for rate limiter").Base(err)
