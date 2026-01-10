@@ -59,7 +59,7 @@ func (l *Limiter) RemoveUser(tag string, email string) {
 }
 
 func calculateSafeBurst(rateLimit uint64) int {
-	const maxInt = 1<<31 - 1
+	const maxInt = 1 << 31 - 1
 
 	burst := rateLimit * 3
 	if burst > uint64(maxInt) {
