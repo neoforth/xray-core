@@ -40,7 +40,7 @@ func (l *Limiter) GetUserBucket(tag string, email string, rateLimit uint64) *rat
 
 	ui, _ := i.Users.LoadOrStore(email, &User{
 		Email:  email,
-		Bucket: rate.NewLimiter(rate.Limit(rateLimit), int(rateLimit * 3)),
+		Bucket: rate.NewLimiter(rate.Limit(rateLimit), calculateSafeBurst(rateLimit)),
 	})
 	u := ui.(*User)
 
@@ -56,4 +56,15 @@ func (l *Limiter) RemoveUser(tag string, email string) {
 		i := ii.(*Inbound)
 		i.Users.Delete(email)
 	}
+}
+
+func calculateSafeBurst(rateLimit uint64) int {
+	const maxInt = 1<<31 - 1
+
+	burst := rateLimit * 3
+	if burst > uint64(maxInt) {
+		return maxInt
+	}
+
+	return int(burst)
 }
