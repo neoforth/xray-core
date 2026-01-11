@@ -7,7 +7,7 @@
 package protocol
 
 import (
-	serial "github.com/xtls/xray-core/common/serial"
+	serial "github.com/neoforth/xray-core/common/serial"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -17,26 +17,26 @@ import (
 
 const (
 	// Verify that this generated code is sufficiently up-to-date.
-	_ = protoimpl.EnforceVersion(20 - protoimpl.MinVersion)
+	_	= protoimpl.EnforceVersion(20 - protoimpl.MinVersion)
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
-	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
+	_	= protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
 // User is a generic user for all procotols.
 type User struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state	protoimpl.MessageState	`protogen:"open.v1"`
 	// Device limit and speed limit
-	SpeedLimit  uint64 `protobuf:"varint,1,opt,name=speed_limit,json=speedLimit,proto3" json:"speed_limit,omitempty"`
-	DeviceLimit uint32 `protobuf:"varint,2,opt,name=device_limit,json=deviceLimit,proto3" json:"device_limit,omitempty"`
-	Level       uint32 `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
-	Email       string `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
+	SpeedLimit	uint64	`protobuf:"varint,1,opt,name=speed_limit,json=speedLimit,proto3" json:"speed_limit,omitempty"`
+	DeviceLimit	uint32	`protobuf:"varint,2,opt,name=device_limit,json=deviceLimit,proto3" json:"device_limit,omitempty"`
+	Level		uint32	`protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
+	Email		string	`protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
 	// Protocol specific account information. Must be the account proto in one of
 	// the proxies.
-	Account *serial.TypedMessage `protobuf:"bytes,5,opt,name=account,proto3" json:"account,omitempty"`
+	Account	*serial.TypedMessage	`protobuf:"bytes,5,opt,name=account,proto3" json:"account,omitempty"`
 	// Reserved for global device limit
-	ID            uint32 `protobuf:"varint,6,opt,name=id,proto3" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ID		uint32	`protobuf:"varint,6,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields	protoimpl.UnknownFields
+	sizeCache	protoimpl.SizeCache
 }
 
 func (x *User) Reset() {
@@ -50,7 +50,7 @@ func (x *User) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*User) ProtoMessage() {}
+func (*User) ProtoMessage()	{}
 
 func (x *User) ProtoReflect() protoreflect.Message {
 	mi := &file_common_protocol_user_proto_msgTypes[0]
@@ -127,8 +127,8 @@ const file_common_protocol_user_proto_rawDesc = "" +
 	"\x18com.xray.common.protocolP\x01Z)github.com/xtls/xray-core/common/protocol\xaa\x02\x14Xray.Common.Protocolb\x06proto3"
 
 var (
-	file_common_protocol_user_proto_rawDescOnce sync.Once
-	file_common_protocol_user_proto_rawDescData []byte
+	file_common_protocol_user_proto_rawDescOnce	sync.Once
+	file_common_protocol_user_proto_rawDescData	[]byte
 )
 
 func file_common_protocol_user_proto_rawDescGZIP() []byte {
@@ -140,19 +140,19 @@ func file_common_protocol_user_proto_rawDescGZIP() []byte {
 
 var file_common_protocol_user_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_common_protocol_user_proto_goTypes = []any{
-	(*User)(nil),                // 0: xray.common.protocol.User
-	(*serial.TypedMessage)(nil), // 1: xray.common.serial.TypedMessage
+	(*User)(nil),			// 0: xray.common.protocol.User
+	(*serial.TypedMessage)(nil),	// 1: xray.common.serial.TypedMessage
 }
 var file_common_protocol_user_proto_depIdxs = []int32{
-	1, // 0: xray.common.protocol.User.account:type_name -> xray.common.serial.TypedMessage
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1,	// 0: xray.common.protocol.User.account:type_name -> xray.common.serial.TypedMessage
+	1,	// [1:1] is the sub-list for method output_type
+	1,	// [1:1] is the sub-list for method input_type
+	1,	// [1:1] is the sub-list for extension type_name
+	1,	// [1:1] is the sub-list for extension extendee
+	0,	// [0:1] is the sub-list for field type_name
 }
 
-func init() { file_common_protocol_user_proto_init() }
+func init()	{ file_common_protocol_user_proto_init() }
 func file_common_protocol_user_proto_init() {
 	if File_common_protocol_user_proto != nil {
 		return
@@ -160,16 +160,16 @@ func file_common_protocol_user_proto_init() {
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
-			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_protocol_user_proto_rawDesc), len(file_common_protocol_user_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   1,
-			NumExtensions: 0,
-			NumServices:   0,
+			GoPackagePath:	reflect.TypeOf(x{}).PkgPath(),
+			RawDescriptor:	unsafe.Slice(unsafe.StringData(file_common_protocol_user_proto_rawDesc), len(file_common_protocol_user_proto_rawDesc)),
+			NumEnums:	0,
+			NumMessages:	1,
+			NumExtensions:	0,
+			NumServices:	0,
 		},
-		GoTypes:           file_common_protocol_user_proto_goTypes,
-		DependencyIndexes: file_common_protocol_user_proto_depIdxs,
-		MessageInfos:      file_common_protocol_user_proto_msgTypes,
+		GoTypes:		file_common_protocol_user_proto_goTypes,
+		DependencyIndexes:	file_common_protocol_user_proto_depIdxs,
+		MessageInfos:		file_common_protocol_user_proto_msgTypes,
 	}.Build()
 	File_common_protocol_user_proto = out.File
 	file_common_protocol_user_proto_goTypes = nil

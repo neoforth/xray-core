@@ -1,8 +1,8 @@
 package protocol
 
 import (
-	"github.com/xtls/xray-core/common/errors"
-	"github.com/xtls/xray-core/common/serial"
+	"github.com/neoforth/xray-core/common/errors"
+	"github.com/neoforth/xray-core/common/serial"
 )
 
 func (u *User) GetTypedAccount() (Account, error) {
@@ -30,15 +30,15 @@ func (u *User) ToMemoryUser() (*MemoryUser, error) {
 	}
 	return &MemoryUser{
 		// Reserved for global device limit
-		ID: u.ID,
+		ID:	u.ID,
 
-		Account: account,
-		Email:   u.Email,
-		Level:   u.Level,
+		Account:	account,
+		Email:		u.Email,
+		Level:		u.Level,
 
 		// Device limit and speed limit
-		DeviceLimit: u.DeviceLimit,
-		SpeedLimit:  u.SpeedLimit,
+		DeviceLimit:	u.DeviceLimit,
+		SpeedLimit:	u.SpeedLimit,
 	}, nil
 }
 
@@ -48,29 +48,29 @@ func ToProtoUser(mu *MemoryUser) *User {
 	}
 	return &User{
 		// Reserved for global device limit
-		ID: mu.ID,
+		ID:	mu.ID,
 
-		Account: serial.ToTypedMessage(mu.Account.ToProto()),
-		Email:   mu.Email,
-		Level:   mu.Level,
+		Account:	serial.ToTypedMessage(mu.Account.ToProto()),
+		Email:		mu.Email,
+		Level:		mu.Level,
 
 		// Device limit and speed limit
-		DeviceLimit: mu.DeviceLimit,
-		SpeedLimit:  mu.SpeedLimit,
+		DeviceLimit:	mu.DeviceLimit,
+		SpeedLimit:	mu.SpeedLimit,
 	}
 }
 
 // MemoryUser is a parsed form of User, to reduce number of parsing of Account proto.
 type MemoryUser struct {
 	// Reserved for global device limit
-	ID uint32
+	ID	uint32
 
 	// Account is the parsed account of the protocol.
-	Account Account
-	Email   string
-	Level   uint32
+	Account	Account
+	Email	string
+	Level	uint32
 
 	// Device limit and speed limit
-	DeviceLimit uint32
-	SpeedLimit  uint64
+	DeviceLimit	uint32
+	SpeedLimit	uint64
 }

@@ -3,15 +3,15 @@ package limiter
 import (
 	"context"
 
-	"github.com/xtls/xray-core/common/buf"
-	"github.com/xtls/xray-core/common/errors"
+	"github.com/neoforth/xray-core/common/buf"
+	"github.com/neoforth/xray-core/common/errors"
 	"golang.org/x/time/rate"
 )
 
 type Writer struct {
-	writer  buf.Writer
-	limiter *rate.Limiter
-	ctx     context.Context
+	writer	buf.Writer
+	limiter	*rate.Limiter
+	ctx	context.Context
 }
 
 func (l *Limiter) RateWriter(ctx context.Context, writer buf.Writer, limiter *rate.Limiter) buf.Writer {
@@ -21,9 +21,9 @@ func (l *Limiter) RateWriter(ctx context.Context, writer buf.Writer, limiter *ra
 	}
 
 	return &Writer{
-		writer:  writer,
-		limiter: limiter,
-		ctx:     ctx,
+		writer:		writer,
+		limiter:	limiter,
+		ctx:		ctx,
 	}
 }
 
