@@ -2,9 +2,7 @@ package limiter
 
 import (
 	"context"
-	"io"
 
-	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
 	"golang.org/x/time/rate"
