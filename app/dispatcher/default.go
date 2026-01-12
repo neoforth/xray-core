@@ -7,22 +7,22 @@ import (
 	"sync"
 	"time"
 
-	"github.com/neoforth/xray-core/common"
-	"github.com/neoforth/xray-core/common/buf"
-	"github.com/neoforth/xray-core/common/errors"
-	"github.com/neoforth/xray-core/common/log"
-	"github.com/neoforth/xray-core/common/net"
-	"github.com/neoforth/xray-core/common/protocol"
-	"github.com/neoforth/xray-core/common/session"
-	"github.com/neoforth/xray-core/core"
-	"github.com/neoforth/xray-core/features/dns"
-	"github.com/neoforth/xray-core/features/outbound"
-	"github.com/neoforth/xray-core/features/policy"
-	"github.com/neoforth/xray-core/features/routing"
-	routing_session "github.com/neoforth/xray-core/features/routing/session"
-	"github.com/neoforth/xray-core/features/stats"
-	"github.com/neoforth/xray-core/transport"
-	"github.com/neoforth/xray-core/transport/pipe"
+	"github.com/xtls/xray-core/common"
+	"github.com/xtls/xray-core/common/buf"
+	"github.com/xtls/xray-core/common/errors"
+	"github.com/xtls/xray-core/common/log"
+	"github.com/xtls/xray-core/common/net"
+	"github.com/xtls/xray-core/common/protocol"
+	"github.com/xtls/xray-core/common/session"
+	"github.com/xtls/xray-core/core"
+	"github.com/xtls/xray-core/features/dns"
+	"github.com/xtls/xray-core/features/outbound"
+	"github.com/xtls/xray-core/features/policy"
+	"github.com/xtls/xray-core/features/routing"
+	routing_session "github.com/xtls/xray-core/features/routing/session"
+	"github.com/xtls/xray-core/features/stats"
+	"github.com/xtls/xray-core/transport"
+	"github.com/xtls/xray-core/transport/pipe"
 
 	// IP limit and rate limit
 	"github.com/neoforth/xray-core/app/limiter"
@@ -32,8 +32,8 @@ var errSniffingTimeout = errors.New("timeout on sniffing")
 
 type cachedReader struct {
 	sync.Mutex
-	reader	buf.TimeoutReader	// *pipe.Reader or *buf.TimeoutWrapperReader
-	cache	buf.MultiBuffer
+	reader buf.TimeoutReader // *pipe.Reader or *buf.TimeoutWrapperReader
+	cache  buf.MultiBuffer
 }
 
 func (r *cachedReader) Cache(b *buf.Buffer, deadline time.Duration) error {
@@ -97,11 +97,11 @@ func (r *cachedReader) Interrupt() {
 
 // DefaultDispatcher is a default implementation of Dispatcher.
 type DefaultDispatcher struct {
-	ohm	outbound.Manager
-	router	routing.Router
-	policy	policy.Manager
-	stats	stats.Manager
-	fdns	dns.FakeDNSEngine
+	ohm    outbound.Manager
+	router routing.Router
+	policy policy.Manager
+	stats  stats.Manager
+	fdns   dns.FakeDNSEngine
 
 	// IP limit and rate limit
 	limiter	*limiter.Limiter
@@ -146,7 +146,7 @@ func (*DefaultDispatcher) Start() error {
 }
 
 // Close implements common.Closable.
-func (*DefaultDispatcher) Close() error	{ return nil }
+func (*DefaultDispatcher) Close() error { return nil }
 
 func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *transport.Link) {
 	opt := pipe.OptionsFromContext(ctx)
@@ -154,13 +154,13 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 	downlinkReader, downlinkWriter := pipe.New(opt...)
 
 	inboundLink := &transport.Link{
-		Reader:	downlinkReader,
-		Writer:	uplinkWriter,
+		Reader: downlinkReader,
+		Writer: uplinkWriter,
 	}
 
 	outboundLink := &transport.Link{
-		Reader:	uplinkReader,
-		Writer:	downlinkWriter,
+		Reader: uplinkReader,
+		Writer: downlinkWriter,
 	}
 
 	sessionInbound := session.InboundFromContext(ctx)
@@ -178,12 +178,13 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 		}
 
 		p := d.policy.ForLevel(user.Level)
+
 		if p.Stats.UserUplink {
 			name := "user>>>" + user.Email + ">>>traffic>>>uplink"
 			if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
 				inboundLink.Writer = &SizeStatWriter{
-					Counter:	c,
-					Writer:		inboundLink.Writer,
+					Counter: c,
+					Writer:  inboundLink.Writer,
 				}
 			}
 		}
@@ -192,8 +193,8 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 			name := "user>>>" + user.Email + ">>>traffic>>>downlink"
 			if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
 				outboundLink.Writer = &SizeStatWriter{
-					Counter:	c,
-					Writer:		outboundLink.Writer,
+					Counter: c,
+					Writer:  outboundLink.Writer,
 				}
 			}
 		}
@@ -235,8 +236,8 @@ func WrapLink(ctx context.Context, policyManager policy.Manager, statsManager st
 			name := "user>>>" + user.Email + ">>>traffic>>>downlink"
 			if c, _ := stats.GetOrRegisterCounter(statsManager, name); c != nil {
 				link.Writer = &SizeStatWriter{
-					Counter:	c,
-					Writer:		link.Writer,
+					Counter: c,
+					Writer:  link.Writer,
 				}
 			}
 		}
@@ -443,9 +444,9 @@ func sniffer(ctx context.Context, cReader *cachedReader, metadataOnly bool, netw
 				if !payload.IsEmpty() {
 					result, err := sniffer.Sniff(ctx, payload.Bytes(), network)
 					switch err {
-					case common.ErrNoClue:	// No Clue: protocol not matches, and sniffer cannot determine whether there will be a match or not
+					case common.ErrNoClue: // No Clue: protocol not matches, and sniffer cannot determine whether there will be a match or not
 						totalAttempt++
-					case protocol.ErrProtoNeedMoreData:	// Protocol Need More Data: protocol matches, but need more data to complete sniffing
+					case protocol.ErrProtoNeedMoreData: // Protocol Need More Data: protocol matches, but need more data to complete sniffing
 						// in this case, do not add totalAttempt(allow to read until timeout)
 					default:
 						return result, err
@@ -504,7 +505,7 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 				errors.LogWarning(ctx, "non existing outTag: ", outTag)
 				common.Close(link.Writer)
 				common.Interrupt(link.Reader)
-				return	// DO NOT CHANGE: the traffic shouldn't be processed by default outbound if the specified outbound tag doesn't exist (yet), e.g., VLESS Reverse Proxy
+				return // DO NOT CHANGE: the traffic shouldn't be processed by default outbound if the specified outbound tag doesn't exist (yet), e.g., VLESS Reverse Proxy
 			}
 		} else {
 			errors.LogInfo(ctx, "default route for ", destination)

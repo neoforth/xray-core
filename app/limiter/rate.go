@@ -3,8 +3,8 @@ package limiter
 import (
 	"context"
 
-	"github.com/neoforth/xray-core/common/buf"
-	"github.com/neoforth/xray-core/common/errors"
+	"github.com/xtls/xray-core/common/buf"
+	"github.com/xtls/xray-core/common/errors"
 	"golang.org/x/time/rate"
 )
 
